@@ -35,7 +35,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-    app.UseCors("FrontendDev");
+app.UseCors("FrontendDev");
 
 app.MapHub<PortfolioHub>("/portfolioHub");
 

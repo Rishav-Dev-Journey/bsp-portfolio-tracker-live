@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import toast, { Toaster } from 'react-hot-toast'
+import { useMemo, useState } from "react";
+import toast, { Toaster } from "react-hot-toast";
 import {
   Activity,
   Bell,
@@ -9,46 +9,50 @@ import {
   ShieldCheck,
   Sparkles,
   WifiOff,
-} from 'lucide-react'
-import { Alerts } from './components/Alerts'
-import { HoldingsTable } from './components/HoldingsTable'
-import { NotificationCenter } from './components/NotificationCenter'
-import { StatsCards } from './components/StatsCards'
-import { TradeModal } from './components/TradeModal'
-import { usePortfolio } from './hooks/usePortfolio'
-import { calculatePortfolioMetrics } from './lib/portfolio'
-import { formatCurrency } from './lib/formatters'
+} from "lucide-react";
+import { Alerts } from "./components/Alerts";
+import { HoldingsTable } from "./components/HoldingsTable";
+import { NotificationCenter } from "./components/NotificationCenter";
+import { StatsCards } from "./components/StatsCards";
+import { TradeModal } from "./components/TradeModal";
+import { usePortfolio } from "./hooks/usePortfolio";
+import { calculatePortfolioMetrics } from "./lib/portfolio";
+import { formatCurrency } from "./lib/formatters";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5182'
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5182";
 
 function App() {
-  const { portfolio, status, lastUpdatedAt, error } = usePortfolio()
-  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [notifications, setNotifications] = useState([])
+  const { portfolio, status, lastUpdatedAt, error } = usePortfolio();
+  const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
-  const metrics = useMemo(() => calculatePortfolioMetrics(portfolio), [portfolio])
-  const livePositions = metrics.positions
-  const marketPulse = metrics.topMover
+  const metrics = useMemo(
+    () => calculatePortfolioMetrics(portfolio),
+    [portfolio],
+  );
+  const livePositions = metrics.positions;
+  const marketPulse = metrics.topMover;
 
   const handleAddNotification = (notif) => {
-    setNotifications((prev) => [...prev, notif])
-  }
+    setNotifications((prev) => [...prev, notif]);
+  };
 
   const handleRemoveNotification = (notifId) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== notifId))
-  }
+    setNotifications((prev) => prev.filter((n) => n.id !== notifId));
+  };
 
   const handleAddTrade = async (trade) => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
     try {
       await toast.promise(
         (async () => {
           const response = await fetch(`${API_BASE_URL}/portfolio/positions`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({
               symbol: trade.ticker,
@@ -56,26 +60,26 @@ function App() {
               averageCost: trade.averageCost,
               currentPrice: trade.currentPrice,
             }),
-          })
+          });
 
           if (!response.ok) {
-            throw new Error('The backend rejected the trade payload.')
+            throw new Error("The backend rejected the trade payload.");
           }
 
-          return response
+          return response;
         })(),
         {
-          loading: 'Submitting trade to the backend...',
-          success: 'Trade added. Waiting for the live feed to refresh.',
-          error: 'Unable to add trade right now.',
+          loading: "Submitting trade to the backend...",
+          success: "Trade added. Waiting for the live feed to refresh.",
+          error: "Unable to add trade right now.",
         },
-      )
+      );
 
-      setIsTradeModalOpen(false)
+      setIsTradeModalOpen(false);
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#050816] text-slate-100">
@@ -83,11 +87,11 @@ function App() {
         position="top-right"
         toastOptions={{
           style: {
-            background: 'rgba(15, 23, 42, 0.96)',
-            color: '#e2e8f0',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            borderRadius: '18px',
-            boxShadow: '0 24px 80px -24px rgba(0, 0, 0, 0.7)',
+            background: "rgba(15, 23, 42, 0.96)",
+            color: "#e2e8f0",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "18px",
+            boxShadow: "0 24px 80px -24px rgba(0, 0, 0, 0.7)",
           },
           duration: 3500,
         }}
@@ -112,7 +116,9 @@ function App() {
                   A financial dashboard built for live portfolio movement.
                 </h1>
                 <p className="max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
-                  SignalR streams the latest holdings, the table highlights price changes, and new trades are written back to the backend in one flow.
+                  SignalR streams the latest holdings, the table highlights
+                  price changes, and new trades are written back to the backend
+                  in one flow.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
@@ -125,12 +131,18 @@ function App() {
                   Add New Trade
                 </button>
                 <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
-                  {status === 'connected' ? <ShieldCheck className="h-4 w-4 text-emerald-300" /> : <WifiOff className="h-4 w-4 text-amber-300" />}
-                  {status === 'connected' ? 'Live connection active' : `Connection: ${status}`}
+                  {status === "connected" ? (
+                    <ShieldCheck className="h-4 w-4 text-emerald-300" />
+                  ) : (
+                    <WifiOff className="h-4 w-4 text-amber-300" />
+                  )}
+                  {status === "connected"
+                    ? "Live connection active"
+                    : `Connection: ${status}`}
                 </div>
                 <div className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
                   <Activity className="h-4 w-4 text-cyan-300" />
-                  {error ? 'Reconnecting to feed' : 'Streaming every 2 seconds'}
+                  {error ? "Reconnecting to feed" : "Streaming every 2 seconds"}
                 </div>
                 <div className="relative inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-300">
                   <Bell className="h-4 w-4 text-amber-300" />
@@ -147,8 +159,12 @@ function App() {
             <div className="grid gap-4 rounded-[1.75rem] border border-white/10 bg-slate-950/50 p-5">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">Market pulse</p>
-                  <h2 className="mt-2 text-lg font-semibold text-white">Today&apos;s theme</h2>
+                  <p className="text-xs uppercase tracking-[0.28em] text-slate-400">
+                    Market pulse
+                  </p>
+                  <h2 className="mt-2 text-lg font-semibold text-white">
+                    Today&apos;s theme
+                  </h2>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-slate-200">
                   <LineChart className="h-5 w-5" />
@@ -161,11 +177,18 @@ function App() {
                 </div>
                 <div className="flex items-center justify-between text-sm text-slate-400">
                   <span>Top mover</span>
-                  <span>{marketPulse ? marketPulse.ticker : '—'}</span>
+                  <span>{marketPulse ? marketPulse.ticker : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-slate-400">
                   <span>Last refresh</span>
-                  <span>{lastUpdatedAt ? new Date(lastUpdatedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'Awaiting data'}</span>
+                  <span>
+                    {lastUpdatedAt
+                      ? new Date(lastUpdatedAt).toLocaleTimeString([], {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })
+                      : "Awaiting data"}
+                  </span>
                 </div>
               </div>
               <div className="rounded-2xl border border-white/5 bg-gradient-to-br from-cyan-400/10 via-transparent to-emerald-400/10 p-4 text-sm text-slate-300">
@@ -174,14 +197,20 @@ function App() {
                   Operational note
                 </div>
                 <p className="mt-2 leading-6">
-                  The dashboard is optimized for AI-Native assessment documentation: hook logic, stats, table rendering, alert handling, and trade entry are intentionally separated.
+                  The dashboard is optimized for AI-Native assessment
+                  documentation: hook logic, stats, table rendering, alert
+                  handling, and trade entry are intentionally separated.
                 </p>
               </div>
             </div>
           </div>
         </header>
 
-        <StatsCards metrics={metrics} connectionStatus={status} lastUpdatedAt={lastUpdatedAt} />
+        <StatsCards
+          metrics={metrics}
+          connectionStatus={status}
+          lastUpdatedAt={lastUpdatedAt}
+        />
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_360px]">
           <HoldingsTable holdings={livePositions} />
@@ -189,17 +218,20 @@ function App() {
         </section>
       </main>
 
-      <NotificationCenter notifications={notifications} onRemove={handleRemoveNotification} />
+      <NotificationCenter
+        notifications={notifications}
+        onRemove={handleRemoveNotification}
+      />
 
       <TradeModal
-        key={isTradeModalOpen ? 'trade-modal-open' : 'trade-modal-closed'}
+        key={isTradeModalOpen ? "trade-modal-open" : "trade-modal-closed"}
         open={isTradeModalOpen}
         onClose={() => setIsTradeModalOpen(false)}
         onSubmit={handleAddTrade}
         submitting={isSubmitting}
       />
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
