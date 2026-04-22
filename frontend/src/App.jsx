@@ -49,6 +49,47 @@ function App() {
     try {
       await toast.promise(
         (async () => {
+          // If accumulating with existing position, merge the data
+          if (trade.isAccumulation) {
+            const existing = livePositions.find(
+              (h) => h.symbol.toUpperCase() === trade.ticker.toUpperCase(),
+            );
+            if (existing) {
+              const existingQty = Number(existing.quantity || 0);
+              const existingCost = Number(existing.averageCost || 0);
+              const newQty = Number(trade.quantity);
+              const newCost = Number(trade.averageCost);
+
+              const totalQty = existingQty + newQty;
+              const weightedCost =
+                (existingQty * existingCost + newQty * newCost) / totalQty;
+
+              // Send merged position to backend
+              const response = await fetch(
+                `${API_BASE_URL}/portfolio/positions`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    symbol: trade.ticker,
+                    quantity: totalQty,
+                    averageCost: weightedCost,
+                    currentPrice: trade.currentPrice,
+                  }),
+                },
+              );
+
+              if (!response.ok) {
+                throw new Error("Failed to merge position.");
+              }
+
+              return response;
+            }
+          }
+
+          // Add as new position
           const response = await fetch(`${API_BASE_URL}/portfolio/positions`, {
             method: "POST",
             headers: {
@@ -70,7 +111,9 @@ function App() {
         })(),
         {
           loading: "Submitting trade to the backend...",
-          success: "Trade added. Waiting for the live feed to refresh.",
+          success: trade.isAccumulation
+            ? "Position merged. Waiting for the live feed to refresh."
+            : "Trade added. Waiting for the live feed to refresh.",
           error: "Unable to add trade right now.",
         },
       );
@@ -229,6 +272,7 @@ function App() {
         onClose={() => setIsTradeModalOpen(false)}
         onSubmit={handleAddTrade}
         submitting={isSubmitting}
+        existingHoldings={livePositions}
       />
     </div>
   );

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { X } from "lucide-react";
+import { ChevronDown, X, AlertCircle } from "lucide-react";
 import { formatCurrency } from "../lib/formatters";
 
 const initialForm = {
@@ -9,13 +9,50 @@ const initialForm = {
   currentPrice: "",
 };
 
-export function TradeModal({ open, onClose, onSubmit, submitting }) {
+export function TradeModal({
+  open,
+  onClose,
+  onSubmit,
+  submitting,
+  existingHoldings = [],
+}) {
   const [form, setForm] = useState(initialForm);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Find matching existing holding
+  const matchingHolding = useMemo(() => {
+    if (!form.ticker.trim()) return null;
+    return existingHoldings.find(
+      (h) => h.symbol.toUpperCase() === form.ticker.toUpperCase(),
+    );
+  }, [form.ticker, existingHoldings]);
+
+  // Calculate merged position if adding to existing
+  const mergedPosition = useMemo(() => {
+    if (!matchingHolding || !form.quantity || !form.averageCost) return null;
+
+    const existingQty = Number(matchingHolding.quantity || 0);
+    const existingCost = Number(matchingHolding.averageCost || 0);
+    const newQty = Number(form.quantity);
+    const newCost = Number(form.averageCost);
+
+    const totalQty = existingQty + newQty;
+    const weightedCost =
+      (existingQty * existingCost + newQty * newCost) / totalQty;
+
+    return {
+      totalQty,
+      weightedCost,
+      existingQty,
+      existingCost,
+      newQty,
+      newCost,
+    };
+  }, [matchingHolding, form]);
 
   const previewValue = useMemo(() => {
     const quantity = Number(form.quantity || 0);
     const price = Number(form.currentPrice || form.averageCost || 0);
-
     return quantity * price;
   }, [form.currentPrice, form.averageCost, form.quantity]);
 
@@ -30,6 +67,15 @@ export function TradeModal({ open, onClose, onSubmit, submitting }) {
     }));
   };
 
+  const selectExistingStock = (holding) => {
+    setForm((current) => ({
+      ...current,
+      ticker: holding.symbol,
+      currentPrice: String(holding.currentPrice || ""),
+    }));
+    setShowSuggestions(false);
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     await onSubmit({
@@ -37,6 +83,7 @@ export function TradeModal({ open, onClose, onSubmit, submitting }) {
       quantity: Number(form.quantity),
       averageCost: Number(form.averageCost),
       currentPrice: Number(form.currentPrice || form.averageCost),
+      isAccumulation: !!matchingHolding,
     });
   };
 
@@ -58,8 +105,9 @@ export function TradeModal({ open, onClose, onSubmit, submitting }) {
               Add New Trade
             </h2>
             <p className="mt-2 text-sm text-slate-400">
-              Submit a new position and let the backend persist it to
-              portfolio.json.
+              {matchingHolding
+                ? "Adding to existing position—average cost will be recalculated."
+                : "Submit a new position to your portfolio."}
             </p>
           </div>
           <button
@@ -75,13 +123,63 @@ export function TradeModal({ open, onClose, onSubmit, submitting }) {
           className="flex-1 space-y-5 overflow-y-auto p-6"
           onSubmit={handleSubmit}
         >
+          {/* Ticker field with suggestions */}
+          <div className="space-y-2">
+            <label className="space-y-2">
+              <span className="text-xs uppercase tracking-[0.28em] text-slate-400">
+                Ticker
+              </span>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={form.ticker}
+                  onChange={(e) => {
+                    updateField("ticker")(e);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  placeholder="NVDA"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400/40 focus:ring-2 focus:ring-emerald-400/20"
+                  required
+                />
+                {showSuggestions && form.ticker.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-white/10 bg-slate-900/95 shadow-lg max-h-48 overflow-y-auto z-20">
+                    {existingHoldings
+                      .filter((h) =>
+                        h.symbol
+                          .toUpperCase()
+                          .includes(form.ticker.toUpperCase()),
+                      )
+                      .map((holding) => (
+                        <button
+                          key={holding.symbol}
+                          type="button"
+                          onClick={() => selectExistingStock(holding)}
+                          className="w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/10 border-b border-white/5 last:border-b-0"
+                        >
+                          <div className="font-semibold">{holding.symbol}</div>
+                          <div className="text-xs text-slate-500">
+                            {holding.quantity} shares @
+                            {formatCurrency(holding.averageCost)}
+                          </div>
+                        </button>
+                      ))}
+                    {existingHoldings.filter((h) =>
+                      h.symbol
+                        .toUpperCase()
+                        .includes(form.ticker.toUpperCase()),
+                    ).length === 0 && (
+                      <div className="px-4 py-3 text-xs text-slate-400">
+                        No matching stocks found. This will be a new position.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </label>
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="Ticker"
-              value={form.ticker}
-              onChange={updateField("ticker")}
-              placeholder="NVDA"
-            />
             <Field
               label="Quantity"
               value={form.quantity}
@@ -111,9 +209,35 @@ export function TradeModal({ open, onClose, onSubmit, submitting }) {
             />
           </div>
 
+          {/* Merge preview if adding to existing */}
+          {mergedPosition && (
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4">
+              <div className="flex items-start gap-2 mb-3">
+                <AlertCircle className="h-5 w-5 text-emerald-300 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-emerald-100">
+                  <p className="font-semibold mb-2">Position Merge Preview</p>
+                  <div className="space-y-1 text-xs">
+                    <div>
+                      Current: {mergedPosition.existingQty} shares @{" "}
+                      {formatCurrency(mergedPosition.existingCost)}
+                    </div>
+                    <div>
+                      Adding: {mergedPosition.newQty} shares @{" "}
+                      {formatCurrency(mergedPosition.newCost)}
+                    </div>
+                    <div className="border-t border-emerald-400/20 pt-1 mt-1 font-semibold">
+                      New Total: {mergedPosition.totalQty} shares @{" "}
+                      {formatCurrency(mergedPosition.weightedCost)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="rounded-3xl border border-white/10 bg-white/5 p-4">
             <div className="flex items-center justify-between gap-4 text-sm text-slate-400">
-              <span>Estimated market value</span>
+              <span>Estimated market value (new shares)</span>
               <span className="font-semibold text-white">
                 {formatCurrency(previewValue)}
               </span>
@@ -133,7 +257,11 @@ export function TradeModal({ open, onClose, onSubmit, submitting }) {
               disabled={submitting}
               className="inline-flex items-center justify-center rounded-2xl bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {submitting ? "Submitting..." : "Add Trade"}
+              {submitting
+                ? "Submitting..."
+                : matchingHolding
+                  ? "Accumulate Position"
+                  : "Add Trade"}
             </button>
           </div>
         </form>
