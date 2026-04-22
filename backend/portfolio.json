@@ -1,0 +1,16 @@
+{
+  "positions": [
+    {
+      "symbol": "AAPL",
+      "quantity": 10,
+      "currentPrice": 190.25,
+      "lastUpdatedUtc": "2026-04-23T00:00:00Z"
+    },
+    {
+      "symbol": "MSFT",
+      "quantity": 5,
+      "currentPrice": 420.10,
+      "lastUpdatedUtc": "2026-04-23T00:00:00Z"
+    }
+  ]
+}
