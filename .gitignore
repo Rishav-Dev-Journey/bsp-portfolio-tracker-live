@@ -1,0 +1,40 @@
+# ---- Environment and secrets ----
+.env
+.env.*
+*.env
+*.local
+!.env.example
+!.env.*.example
+
+# ASP.NET local secret overrides
+appsettings.*.local.json
+secrets.json
+
+# ---- Frontend (Node/Vite/React) ----
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/.cache/
+frontend/coverage/
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# ---- Backend (.NET) ----
+backend/bin/
+backend/obj/
+backend/TestResults/
+backend/*.user
+backend/*.suo
+backend/.vs/
+
+# ---- Repo-wide common ignores ----
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
