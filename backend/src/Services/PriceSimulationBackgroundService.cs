@@ -1,18 +1,23 @@
+using Backend.Hubs;
 using Backend.Models;
+using Microsoft.AspNetCore.SignalR;
 
 namespace Backend.Services;
 
 public sealed class PriceSimulationBackgroundService : BackgroundService
 {
   private readonly IPortfolioStore _portfolioStore;
+  private readonly IHubContext<PortfolioHub> _hubContext;
   private readonly ILogger<PriceSimulationBackgroundService> _logger;
   private readonly Random _random = new();
 
   public PriceSimulationBackgroundService(
       IPortfolioStore portfolioStore,
+      IHubContext<PortfolioHub> hubContext,
       ILogger<PriceSimulationBackgroundService> logger)
   {
     _portfolioStore = portfolioStore;
+    _hubContext = hubContext;
     _logger = logger;
   }
 
@@ -33,6 +38,14 @@ public sealed class PriceSimulationBackgroundService : BackgroundService
           var updatedPrice = GetNextPrice(position);
           _portfolioStore.UpdatePrice(position.Symbol, updatedPrice);
         }
+
+        await _hubContext.Clients.All.SendAsync(
+          "PortfolioUpdated",
+          new PortfolioHubMessage
+          {
+            Positions = _portfolioStore.GetPositions().ToList()
+          },
+          stoppingToken);
       }
     }
     catch (OperationCanceledException)

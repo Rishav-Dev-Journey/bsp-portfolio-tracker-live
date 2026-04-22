@@ -29,7 +29,9 @@ public sealed class PortfolioStore : IPortfolioStore
           {
             Symbol = position.Symbol,
             Quantity = position.Quantity,
+            AverageCost = position.AverageCost,
             CurrentPrice = position.CurrentPrice,
+            IsAlert = position.IsAlert,
             LastUpdatedUtc = position.LastUpdatedUtc
           })
           .ToList();
@@ -61,6 +63,7 @@ public sealed class PortfolioStore : IPortfolioStore
 
       position.CurrentPrice = newPrice;
       position.LastUpdatedUtc = DateTime.UtcNow;
+      position.IsAlert = ShouldAlert(position);
       return true;
     }
     finally
@@ -88,6 +91,7 @@ public sealed class PortfolioStore : IPortfolioStore
       }
 
       position.LastUpdatedUtc = DateTime.UtcNow;
+      position.IsAlert = ShouldAlert(position);
       _positions.Add(position);
       SaveToFile();
       return true;
@@ -109,7 +113,25 @@ public sealed class PortfolioStore : IPortfolioStore
 
     var json = File.ReadAllText(_filePath);
     var snapshot = JsonSerializer.Deserialize<PortfolioSnapshot>(json, _jsonOptions);
-    return snapshot?.Positions ?? [];
+    var positions = snapshot?.Positions ?? [];
+
+    foreach (var position in positions)
+    {
+      position.IsAlert = ShouldAlert(position);
+    }
+
+    return positions;
+  }
+
+  private static bool ShouldAlert(PortfolioPosition position)
+  {
+    if (position.AverageCost <= 0)
+    {
+      return false;
+    }
+
+    var movementPercentage = Math.Abs((position.CurrentPrice - position.AverageCost) / position.AverageCost) * 100m;
+    return movementPercentage >= 5m;
   }
 
   private void SaveToFile()

@@ -3,14 +3,26 @@
     {
       "symbol": "AAPL",
       "quantity": 10,
-      "currentPrice": 190.25,
-      "lastUpdatedUtc": "2026-04-23T00:00:00Z"
+      "averageCost": 180.00,
+      "currentPrice": 192.58,
+      "isAlert": true,
+      "lastUpdatedUtc": "2026-04-22T23:43:07.088825Z"
     },
     {
       "symbol": "MSFT",
       "quantity": 5,
-      "currentPrice": 420.10,
-      "lastUpdatedUtc": "2026-04-23T00:00:00Z"
+      "averageCost": 400.00,
+      "currentPrice": 390.34,
+      "isAlert": false,
+      "lastUpdatedUtc": "2026-04-22T23:43:07.088829Z"
+    },
+    {
+      "symbol": "BTC",
+      "quantity": 10,
+      "averageCost": 844.8,
+      "currentPrice": 845,
+      "isAlert": false,
+      "lastUpdatedUtc": "2026-04-22T23:43:08.671165Z"
     }
   ]
 }
