@@ -13,6 +13,7 @@ import {
 import { Alerts } from "./components/Alerts";
 import { HoldingsTable } from "./components/HoldingsTable";
 import { NotificationCenter } from "./components/NotificationCenter";
+import { EditHoldingModal } from "./components/EditHoldingModal";
 import { StatsCards } from "./components/StatsCards";
 import { TradeModal } from "./components/TradeModal";
 import { usePortfolio } from "./hooks/usePortfolio";
@@ -25,6 +26,8 @@ const API_BASE_URL =
 function App() {
   const { portfolio, status, lastUpdatedAt, error } = usePortfolio();
   const [isTradeModalOpen, setIsTradeModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingHolding, setEditingHolding] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notifications, setNotifications] = useState([]);
 
@@ -122,6 +125,87 @@ function App() {
       );
 
       setIsTradeModalOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleEditHolding = (holding) => {
+    setEditingHolding(holding);
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveHolding = async (updated) => {
+    setIsSubmitting(true);
+
+    try {
+      await toast.promise(
+        (async () => {
+          const response = await fetch(
+            `${API_BASE_URL}/portfolio/positions/${updated.ticker}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                symbol: updated.ticker,
+                quantity: updated.quantity,
+                averageCost: updated.averageCost,
+                currentPrice: updated.currentPrice,
+              }),
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to update position.");
+          }
+
+          return response;
+        })(),
+        {
+          loading: "Updating position...",
+          success: "Position updated. Refreshing portfolio...",
+          error: "Unable to update position.",
+        },
+      );
+
+      setIsEditModalOpen(false);
+      setEditingHolding(null);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteHolding = async (ticker) => {
+    if (!window.confirm(`Are you sure you want to delete ${ticker}?`)) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await toast.promise(
+        (async () => {
+          const response = await fetch(
+            `${API_BASE_URL}/portfolio/positions/${ticker}`,
+            {
+              method: "DELETE",
+            },
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to delete position.");
+          }
+
+          return response;
+        })(),
+        {
+          loading: "Deleting position...",
+          success: "Position deleted. Refreshing portfolio...",
+          error: "Unable to delete position.",
+        },
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -259,7 +343,11 @@ function App() {
         />
 
         <section className="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_360px]">
-          <HoldingsTable holdings={livePositions} />
+          <HoldingsTable
+            holdings={livePositions}
+            onEdit={handleEditHolding}
+            onDelete={handleDeleteHolding}
+          />
           <Alerts portfolio={livePositions} onAlert={handleAddNotification} />
         </section>
       </main>
@@ -276,6 +364,18 @@ function App() {
         onSubmit={handleAddTrade}
         submitting={isSubmitting}
         existingHoldings={livePositions}
+      />
+
+      <EditHoldingModal
+        key={isEditModalOpen ? "edit-modal-open" : "edit-modal-closed"}
+        open={isEditModalOpen}
+        holding={editingHolding}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingHolding(null);
+        }}
+        onSubmit={handleSaveHolding}
+        submitting={isSubmitting}
       />
     </div>
   );

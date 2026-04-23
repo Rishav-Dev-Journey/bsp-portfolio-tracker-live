@@ -9,4 +9,8 @@ public interface IPortfolioStore
   bool UpdatePrice(string symbol, decimal newPrice);
 
   bool AddPosition(PortfolioPosition position);
+
+  bool UpdatePosition(string symbol, PortfolioPosition updatedPosition);
+
+  bool DeletePosition(string symbol);
 }

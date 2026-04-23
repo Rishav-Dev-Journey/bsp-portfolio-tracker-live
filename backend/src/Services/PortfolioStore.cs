@@ -102,6 +102,66 @@ public sealed class PortfolioStore : IPortfolioStore
     }
   }
 
+  public bool UpdatePosition(string symbol, PortfolioPosition updatedPosition)
+  {
+    if (string.IsNullOrWhiteSpace(symbol) || updatedPosition is null)
+    {
+      return false;
+    }
+
+    _lock.EnterWriteLock();
+    try
+    {
+      var position = _positions.FirstOrDefault(
+          current => string.Equals(current.Symbol, symbol, StringComparison.OrdinalIgnoreCase));
+
+      if (position is null)
+      {
+        return false;
+      }
+
+      position.Quantity = updatedPosition.Quantity;
+      position.AverageCost = updatedPosition.AverageCost;
+      position.CurrentPrice = updatedPosition.CurrentPrice;
+      position.LastUpdatedUtc = DateTime.UtcNow;
+      position.IsAlert = ShouldAlert(position);
+      SaveToFile();
+      return true;
+    }
+    finally
+    {
+      _lock.ExitWriteLock();
+    }
+  }
+
+  public bool DeletePosition(string symbol)
+  {
+    if (string.IsNullOrWhiteSpace(symbol))
+    {
+      return false;
+    }
+
+    _lock.EnterWriteLock();
+    try
+    {
+      var position = _positions.FirstOrDefault(
+          current => string.Equals(current.Symbol, symbol, StringComparison.OrdinalIgnoreCase));
+
+      if (position is null)
+      {
+        return false;
+      }
+
+      _positions.Remove(position);
+      SaveToFile();
+      return true;
+    }
+    finally
+    {
+      _lock.ExitWriteLock();
+    }
+  }
+
   private List<PortfolioPosition> LoadFromFile()
   {
     if (!File.Exists(_filePath))

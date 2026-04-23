@@ -86,6 +86,47 @@ app.MapPost("/portfolio/positions", async (
     .WithName("AddPosition")
     .WithOpenApi();
 
+app.MapPut("/portfolio/positions/{symbol}", async (
+        string symbol,
+        PortfolioPosition updatedPosition,
+        IPortfolioStore store,
+        IHubContext<PortfolioHub> hubContext) =>
+{
+    var updated = store.UpdatePosition(symbol, updatedPosition);
+
+    if (updated)
+    {
+        await hubContext.Clients.All.SendAsync("PortfolioUpdated", new PortfolioHubMessage
+        {
+            Positions = store.GetPositions().ToList()
+        });
+    }
+
+    return updated ? Results.NoContent() : Results.NotFound("Position not found.");
+})
+    .WithName("UpdatePosition")
+    .WithOpenApi();
+
+app.MapDelete("/portfolio/positions/{symbol}", async (
+        string symbol,
+        IPortfolioStore store,
+        IHubContext<PortfolioHub> hubContext) =>
+{
+    var deleted = store.DeletePosition(symbol);
+
+    if (deleted)
+    {
+        await hubContext.Clients.All.SendAsync("PortfolioUpdated", new PortfolioHubMessage
+        {
+            Positions = store.GetPositions().ToList()
+        });
+    }
+
+    return deleted ? Results.NoContent() : Results.NotFound("Position not found.");
+})
+    .WithName("DeletePosition")
+    .WithOpenApi();
+
 app.Run();
 
 public sealed record UpdatePriceRequest(decimal Price);

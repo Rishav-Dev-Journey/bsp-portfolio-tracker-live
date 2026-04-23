@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronUp, ChevronDown } from "lucide-react";
+import { ChevronUp, ChevronDown, Edit2, Trash2 } from "lucide-react";
 import { calculatePositionGainLoss } from "../lib/portfolio";
 import { formatCurrency, formatNumber } from "../lib/formatters";
 
-export function HoldingsTable({ holdings }) {
+export function HoldingsTable({ holdings, onEdit, onDelete }) {
   const previousPricesRef = useRef(new Map());
   const [flashMap, setFlashMap] = useState({});
 
@@ -72,13 +72,14 @@ export function HoldingsTable({ holdings }) {
               <th className="px-5 py-4 font-medium sm:px-6">Average Cost</th>
               <th className="px-5 py-4 font-medium sm:px-6">Current Price</th>
               <th className="px-5 py-4 font-medium sm:px-6">Gain / Loss</th>
+              <th className="px-5 py-4 font-medium sm:px-6">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {holdings.length === 0 ? (
               <tr>
                 <td
-                  colSpan="5"
+                  colSpan="6"
                   className="px-5 py-10 text-center text-slate-400 sm:px-6"
                 >
                   Waiting for live portfolio data from SignalR...
@@ -145,6 +146,28 @@ export function HoldingsTable({ holdings }) {
                           <ChevronDown className="h-4 w-4" />
                         )}
                         {formatCurrency(gainLoss)}
+                      </div>
+                    </td>
+                    <td className="px-5 py-5 sm:px-6">
+                      <div className="flex items-center gap-2">
+                        {onEdit && (
+                          <button
+                            onClick={() => onEdit(holding)}
+                            className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-blue-500/10 hover:text-blue-300 hover:border-blue-400/30"
+                            title="Edit position"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                        )}
+                        {onDelete && (
+                          <button
+                            onClick={() => onDelete(holding.ticker)}
+                            className="rounded-lg border border-white/10 bg-white/5 p-2 text-slate-300 transition hover:bg-rose-500/10 hover:text-rose-300 hover:border-rose-400/30"
+                            title="Delete position"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
