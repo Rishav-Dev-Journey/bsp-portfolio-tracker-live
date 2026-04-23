@@ -21,9 +21,13 @@ export function TradeModal({
 
   // Find matching existing holding
   const matchingHolding = useMemo(() => {
-    if (!form.ticker.trim()) return null;
+    if (!form.ticker.trim() || !Array.isArray(existingHoldings)) return null;
     return existingHoldings.find(
-      (h) => h.symbol.toUpperCase() === form.ticker.toUpperCase(),
+      (h) =>
+        h &&
+        (h.symbol || h.ticker || "")
+          .toUpperCase()
+          .includes(form.ticker.toUpperCase()),
     );
   }, [form.ticker, existingHoldings]);
 
@@ -68,9 +72,10 @@ export function TradeModal({
   };
 
   const selectExistingStock = (holding) => {
+    const ticker = holding.symbol || holding.ticker || "";
     setForm((current) => ({
       ...current,
-      ticker: holding.symbol,
+      ticker,
       currentPrice: String(holding.currentPrice || ""),
     }));
     setShowSuggestions(false);
@@ -144,31 +149,38 @@ export function TradeModal({
                 />
                 {showSuggestions && form.ticker.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-white/10 bg-slate-900/95 shadow-lg max-h-48 overflow-y-auto z-20">
-                    {existingHoldings
-                      .filter((h) =>
-                        h.symbol
+                    {Array.isArray(existingHoldings) &&
+                      existingHoldings
+                        .filter(
+                          (h) =>
+                            h &&
+                            (h.symbol || h.ticker || "")
+                              .toUpperCase()
+                              .includes(form.ticker.toUpperCase()),
+                        )
+                        .map((holding) => {
+                          const ticker = holding.symbol || holding.ticker || "?";
+                          return (
+                            <button
+                              key={ticker}
+                              type="button"
+                              onClick={() => selectExistingStock(holding)}
+                              className="w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/10 border-b border-white/5 last:border-b-0"
+                            >
+                              <div className="font-semibold">{ticker}</div>
+                              <div className="text-xs text-slate-500">
+                                {holding.quantity} shares @{formatCurrency(holding.averageCost)}
+                              </div>
+                            </button>
+                          );
+                        })}
+                    {(!Array.isArray(existingHoldings) ||
+                      existingHoldings.filter((h) =>
+                        h &&
+                        (h.symbol || h.ticker || "")
                           .toUpperCase()
                           .includes(form.ticker.toUpperCase()),
-                      )
-                      .map((holding) => (
-                        <button
-                          key={holding.symbol}
-                          type="button"
-                          onClick={() => selectExistingStock(holding)}
-                          className="w-full px-4 py-2 text-left text-sm text-slate-200 hover:bg-white/10 border-b border-white/5 last:border-b-0"
-                        >
-                          <div className="font-semibold">{holding.symbol}</div>
-                          <div className="text-xs text-slate-500">
-                            {holding.quantity} shares @
-                            {formatCurrency(holding.averageCost)}
-                          </div>
-                        </button>
-                      ))}
-                    {existingHoldings.filter((h) =>
-                      h.symbol
-                        .toUpperCase()
-                        .includes(form.ticker.toUpperCase()),
-                    ).length === 0 && (
+                      ).length === 0) && (
                       <div className="px-4 py-3 text-xs text-slate-400">
                         No matching stocks found. This will be a new position.
                       </div>

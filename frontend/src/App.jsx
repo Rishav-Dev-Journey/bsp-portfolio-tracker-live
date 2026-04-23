@@ -52,7 +52,10 @@ function App() {
           // If accumulating with existing position, merge the data
           if (trade.isAccumulation) {
             const existing = livePositions.find(
-              (h) => h.symbol.toUpperCase() === trade.ticker.toUpperCase(),
+              (h) =>
+                h &&
+                (h.symbol || h.ticker || "")
+                  .toUpperCase() === trade.ticker.toUpperCase(),
             );
             if (existing) {
               const existingQty = Number(existing.quantity || 0);
