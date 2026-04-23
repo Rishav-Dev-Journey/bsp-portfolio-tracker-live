@@ -57,8 +57,8 @@ function App() {
             const existing = livePositions.find(
               (h) =>
                 h &&
-                (h.symbol || h.ticker || "")
-                  .toUpperCase() === trade.ticker.toUpperCase(),
+                (h.symbol || h.ticker || "").toUpperCase() ===
+                  trade.ticker.toUpperCase(),
             );
             if (existing) {
               const existingQty = Number(existing.quantity || 0);
