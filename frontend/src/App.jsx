@@ -70,11 +70,11 @@ function App() {
               const weightedCost =
                 (existingQty * existingCost + newQty * newCost) / totalQty;
 
-              // Send merged position to backend
+              // Update existing position with merged data
               const response = await fetch(
-                `${API_BASE_URL}/portfolio/positions`,
+                `${API_BASE_URL}/portfolio/positions/${trade.ticker}`,
                 {
-                  method: "POST",
+                  method: "PUT",
                   headers: {
                     "Content-Type": "application/json",
                   },
